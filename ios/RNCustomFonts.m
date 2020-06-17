@@ -16,7 +16,7 @@ RCT_EXPORT_METHOD(
                   reject:(RCTPromiseRejectBlock)reject)
 {
     // Allocate a Dictionary.
-//    NSLog(@"custom_fonts:checkAndDownloadFonts");
+    NSLog(@"custom_fonts:checkAndDownloadFonts");
     const NSMutableDictionary* response = [[NSMutableDictionary alloc]initWithCapacity:10];
     // Get the valid faces.
     const NSArray* validFaces = readableArray;
@@ -33,12 +33,12 @@ RCT_EXPORT_METHOD(
         
         NSFileManager *fileManager = [NSFileManager defaultManager];
         if ([fileManager fileExistsAtPath:filePath]){
-//            NSLog(@"custom_fonts:Font exists %@",fontName );
+            NSLog(@"custom_fonts:Font exists %@",fontName );
             //if file exists, font is installed, load the font file
             [self loadFontFile:filePath];
         }else{
             //font doesn't exist, down laod and load the file
-//            NSLog(@"custom_fonts:Font doesn't exist %@ , Download it",fontName );
+            NSLog(@"custom_fonts:Font doesn't exist %@ , Download it",fontName );
             NSString* path = [self downloadFontWithNameFromUrl:uri
                                         fontName:fontName];
             // Attempt to load the font file.
@@ -109,16 +109,48 @@ RCT_EXPORT_METHOD(
     return validFaces;
 }
 
+RCT_EXPORT_METHOD(
+                  installRemoteFont:(NSString *)filePath
+                  resolve:(RCTPromiseResolveBlock)resolve
+                  reject:(RCTPromiseRejectBlock)reject)
+{
+     NSLog(@"custom_fonts: installing remote font %@",filePath );
+    const NSMutableDictionary* response = [[NSMutableDictionary alloc]initWithCapacity:10];
+    NSData *data = [[NSFileManager defaultManager] contentsAtPath:filePath];
+    CFErrorRef error;
+    CGDataProviderRef provider = CGDataProviderCreateWithCFData((CFDataRef)data);
+    CGFontRef font = CGFontCreateWithDataProvider(provider);
+    if (! CTFontManagerRegisterGraphicsFont(font, &error)) {
+        NSLog(@"custom_fonts: installing font file error %@",filePath );
+        CFStringRef errorDescription = CFErrorCopyDescription(error);
+        NSLog(@"custom_fonts:Failed to install font: %@", errorDescription);
+        CFRelease(errorDescription);
+//        CFRelease(font);
+//        CFRelease(provider);
+        //        NSError *err = [NSError errorWithDomain:@"fonts"
+        //                                           code:1001
+        //                                       userInfo:@{
+        //                                           NSLocalizedDescriptionKey:@"Could not register font"
+        //                                       }];
+        //        reject(@"fonts", @"Font Install failed", err);
+    }
+    //    }else{    
+    CFRelease(font);
+    CFRelease(provider);
+    // Resolve to the caller.
+    resolve(response);
+    
+}
 // https://stackoverflow.com/a/14049216
 - (void) loadFontFile:(NSString*)path
 {
-//    NSLog(@"custom_fonts:loading font file %@",path );
+    NSLog(@"custom_fonts:loading font file %@",path );
     NSData *data = [[NSFileManager defaultManager] contentsAtPath:path];
     CFErrorRef error;
     CGDataProviderRef provider = CGDataProviderCreateWithCFData((CFDataRef)data);
     CGFontRef font = CGFontCreateWithDataProvider(provider);
     if (! CTFontManagerRegisterGraphicsFont(font, &error)) {
-//        NSLog(@"custom_fonts:loading font file error %@",path );
+        NSLog(@"custom_fonts:loading font file error %@",path );
         CFStringRef errorDescription = CFErrorCopyDescription(error);
         NSLog(@"custom_fonts:Failed to load font: %@", errorDescription);
         CFRelease(errorDescription);
@@ -151,7 +183,7 @@ RCT_EXPORT_METHOD(
 
 - (NSString *)downloadFontWithNameFromUrl:(NSString*)stringURL fontName:(NSString*)fontName
 {
-//    NSLog(@"custom_fonts:downloadFontWithNameFromUrl %@ , %@",stringURL, fontName );
+    NSLog(@"custom_fonts:downloadFontWithNameFromUrl %@ , %@",stringURL, fontName );
     // Define the URL to fetch from.
     NSURL* url = [NSURL URLWithString:stringURL];
     // Allocate data storage for the contents of the URL.
@@ -167,7 +199,7 @@ RCT_EXPORT_METHOD(
         // Write the fetched data to the font path.
         [urlData writeToFile:filePath atomically:YES];
         // Return the path that we've written to.
-//         NSLog(@"custom_fonts:downloadFontWithNameFromUrl %@ , %@, file saved",stringURL, fontName );
+         NSLog(@"custom_fonts:downloadFontWithNameFromUrl %@ , %@, file saved",stringURL, fontName );
         return filePath;
     }
     return nil;
